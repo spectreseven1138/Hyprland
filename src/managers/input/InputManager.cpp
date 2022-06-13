@@ -166,8 +166,10 @@ void CInputManager::mouseMoveUnified(uint32_t time, bool refocus) {
 
     Vector2D surfaceLocal = surfacePos == Vector2D(-1337, -1337) ? surfaceCoords : mouseCoords - surfacePos;
 
+    static auto *const PFOLLOWMOUSE = &g_pConfigManager->getConfigValuePtr("input:follow_mouse")->intValue;
+    static auto *const PIGNOREWINDOWLESS = &g_pConfigManager->getConfigValuePtr("input:ignore_windowless")->intValue;
+
     if (pFoundWindow) {
-        static auto *const PFOLLOWMOUSE = &g_pConfigManager->getConfigValuePtr("input:follow_mouse")->intValue;
         if (*PFOLLOWMOUSE != 1 && !refocus) {
             if (pFoundWindow != g_pCompositor->m_pLastWindow && g_pCompositor->windowValidMapped(g_pCompositor->m_pLastWindow) && (g_pCompositor->m_pLastWindow->m_bIsFloating != pFoundWindow->m_bIsFloating)) {
                 // enter if change floating style
@@ -183,7 +185,7 @@ void CInputManager::mouseMoveUnified(uint32_t time, bool refocus) {
             g_pCompositor->focusWindow(pFoundWindow, foundSurface);
         }
     }
-    else
+    else if (*PIGNOREWINDOWLESS == 0)
         g_pCompositor->focusSurface(foundSurface);
 
     wlr_seat_pointer_notify_enter(g_pCompositor->m_sSeat.seat, foundSurface, surfaceLocal.x, surfaceLocal.y);
