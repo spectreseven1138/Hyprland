@@ -31,6 +31,7 @@ CKeybindManager::CKeybindManager() {
     m_mDispatchers["resizeactive"]              = resizeActive;
     m_mDispatchers["cyclenext"]                 = circleNext;
     m_mDispatchers["focuswindowbyclass"]        = focusWindowByClass;
+    m_mDispatchers["setcursorposition"]         = setCursorPosition;
 }
 
 void CKeybindManager::addKeybind(SKeybind kb) {
@@ -942,4 +943,15 @@ void CKeybindManager::focusWindowByClass(std::string clazz) {
 
         break;
     }
+}
+
+void CKeybindManager::setCursorPosition(std::string args) {
+    const int split_pos = args.find_first_of('x');
+
+    if (split_pos == -1) {
+        Debug::log(ERR, "Error in setCursorPosition: invalid coordinates");
+        return;
+    }
+
+    wlr_cursor_warp(g_pCompositor->m_sWLRCursor, g_pCompositor->m_sSeat.mouse->mouse, stoi(args.substr(0, split_pos)), stoi(args.substr(split_pos + 1, args.length())));
 }

@@ -60,6 +60,7 @@ private:
     static void         resizeActive(std::string);
     static void         circleNext(std::string);
     static void         focusWindowByClass(std::string);
+    static void         setCursorPosition(std::string);
 
     friend class CCompositor;
 };

@@ -286,6 +286,23 @@ std::string devicesRequest(bool json) {
     }
 }
 
+std::string cursorPositionRequest(bool json) {
+    const int x = (int)g_pCompositor->m_sWLRCursor->x;
+    const int y = (int)g_pCompositor->m_sWLRCursor->y;
+    if (json) {
+        Json::Value result = Json::Value(Json::objectValue);
+
+        result["x"] = x;
+        result["y"] = y;
+
+        Json::FastWriter writer;
+        return writer.write(result);
+    }
+    else {
+        return getFormat("%ix%i\n", x, y);
+    }
+}
+
 std::string versionRequest() {
     std::string result = "Hyprland, built from branch " + std::string(GIT_BRANCH) + " at commit " + GIT_COMMIT_HASH + GIT_DIRTY + " (" + GIT_COMMIT_MESSAGE + ").\nflags: (if any)\n";
 
@@ -412,6 +429,10 @@ std::string getReply(std::string request) {
         return devicesRequest(false);
     else if (request == "devicesjson")
         return devicesRequest(true);
+    else if (request == "cursorposition")
+        return cursorPositionRequest(false);
+    else if (request == "cursorpositionjson")
+        return cursorPositionRequest(true);
     else if (request.find("dispatch") == 0)
         return dispatchRequest(request);
     else if (request.find("keyword") == 0)

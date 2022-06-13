@@ -24,6 +24,7 @@ usage: hyprctl [command] [(opt)args]
     activewindow
     layers
     devices
+    cursorposition
     dispatch
     keyword
     version
@@ -137,6 +138,7 @@ int main(int argc, char** argv) {
     else if (!strcmp(argv[1], "layers")) request("layers");
     else if (!strcmp(argv[1], "version")) request("version");
     else if (!strcmp(argv[1], "devices")) request(json_format ? "devicesjson" : "devices");
+    else if (!strcmp(argv[1], "cursorposition")) request(json_format ? "cursorpositionjson" : "cursorposition");
     else if (!strcmp(argv[1], "reload")) request("reload");
     else if (!strcmp(argv[1], "dispatch")) dispatchRequest(argc, argv);
     else if (!strcmp(argv[1], "keyword")) keywordRequest(argc, argv);
