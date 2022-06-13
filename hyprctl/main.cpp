@@ -125,13 +125,18 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (!strcmp(argv[1], "monitors")) request("monitors");
-    else if (!strcmp(argv[1], "clients")) request("clients");
-    else if (!strcmp(argv[1], "workspaces")) request("workspaces");
-    else if (!strcmp(argv[1], "activewindow")) request("activewindow");
+    bool json_format = false;
+    if (argc >= 3) {
+        json_format = !strcmp(argv[2], "json");
+    }
+
+    if (!strcmp(argv[1], "monitors")) request(json_format ? "monitorsjson" : "monitors");
+    else if (!strcmp(argv[1], "clients")) request(json_format ? "clientsjson" : "clients");
+    else if (!strcmp(argv[1], "workspaces")) request(json_format ? "workspacesjson" : "workspaces");
+    else if (!strcmp(argv[1], "activewindow")) request(json_format ? "activewindowjson" : "activewindow");
     else if (!strcmp(argv[1], "layers")) request("layers");
     else if (!strcmp(argv[1], "version")) request("version");
-    else if (!strcmp(argv[1], "devices")) request("devices");
+    else if (!strcmp(argv[1], "devices")) request(json_format ? "devicesjson" : "devices");
     else if (!strcmp(argv[1], "reload")) request("reload");
     else if (!strcmp(argv[1], "dispatch")) dispatchRequest(argc, argv);
     else if (!strcmp(argv[1], "keyword")) keywordRequest(argc, argv);

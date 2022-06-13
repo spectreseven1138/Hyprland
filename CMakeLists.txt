@@ -83,6 +83,7 @@ target_link_libraries(Hyprland
         OpenGL
         GLESv2
         pthread
+        jsoncpp
         ${CMAKE_THREAD_LIBS_INIT}
         ${CMAKE_SOURCE_DIR}/ext-workspace-unstable-v1-protocol.o
 )

@@ -12,44 +12,143 @@
 #include <errno.h>
 
 #include <string>
+#include <json/json.h>
 
-std::string monitorsRequest() {
-    std::string result = "";
-    for (auto& m : g_pCompositor->m_lMonitors) {
-        result += getFormat("Monitor %s (ID %i):\n\t%ix%i@%f at %ix%i\n\tactive workspace: %i (%s)\n\treserved: %i %i %i %i\n\n",
-                            m.szName.c_str(), m.ID, (int)m.vecSize.x, (int)m.vecSize.y, m.refreshRate, (int)m.vecPosition.x, (int)m.vecPosition.y, m.activeWorkspace, g_pCompositor->getWorkspaceByID(m.activeWorkspace)->m_szName.c_str(), (int)m.vecReservedTopLeft.x, (int)m.vecReservedTopLeft.y, (int)m.vecReservedBottomRight.x, (int)m.vecReservedBottomRight.y);
+std::string monitorsRequest(bool json) {
+    if (json) {
+        Json::Value result = Json::Value(Json::arrayValue);
+        for (auto& m : g_pCompositor->m_lMonitors) {
+            Json::Value data = Json::Value(Json::objectValue);
+
+            data["name"] = m.szName;
+            data["id"] = m.ID;
+            data["size_x"] = (int)m.vecSize.x;
+            data["size_y"] = (int)m.vecSize.y;
+            data["refresh_rate"] = m.refreshRate;
+            data["pos_x"] = (int)m.vecPosition.x;
+            data["pos_y"] = (int)m.vecPosition.y;
+            data["active_workspace_id"] = m.activeWorkspace;
+            data["active_workspace_name"] = g_pCompositor->getWorkspaceByID(m.activeWorkspace)->m_szName;
+            data["reserved_top_left_x"] = (int)m.vecReservedTopLeft.x;
+            data["reserved_top_left_y"] = (int)m.vecReservedTopLeft.y;
+            data["reserved_bottom_right_x"] = (int)m.vecReservedBottomRight.x;
+            data["reserved_bottom_right_y"] = (int)m.vecReservedBottomRight.y;
+            
+            result.append(data);
+        }
+
+        Json::FastWriter writer;
+        return writer.write(result);
     }
+    else {
+        std::string result = "";
+        for (auto& m : g_pCompositor->m_lMonitors) {
+            result += getFormat("Monitor %s (ID %i):\n\t%ix%i@%f at %ix%i\n\tactive workspace: %i (%s)\n\treserved: %i %i %i %i\n\n",
+                                m.szName.c_str(), m.ID, (int)m.vecSize.x, (int)m.vecSize.y, m.refreshRate, (int)m.vecPosition.x, (int)m.vecPosition.y, m.activeWorkspace, g_pCompositor->getWorkspaceByID(m.activeWorkspace)->m_szName.c_str(), (int)m.vecReservedTopLeft.x, (int)m.vecReservedTopLeft.y, (int)m.vecReservedBottomRight.x, (int)m.vecReservedBottomRight.y);
+        }
 
-    return result;
+        return result;
+    }
 }
 
-std::string clientsRequest() {
-    std::string result = "";
-    for (auto& w : g_pCompositor->m_lWindows) {
-        if (w.m_bIsMapped)
-            result += getFormat("Window %x -> %s:\n\tat: %i,%i\n\tsize: %i,%i\n\tworkspace: %i (%s)\n\tfloating: %i\n\tmonitor: %i\n\tclass: %s\n\n",
-                            &w, w.m_szTitle.c_str(), (int)w.m_vRealPosition.vec().x, (int)w.m_vRealPosition.vec().y, (int)w.m_vRealSize.vec().x, (int)w.m_vRealSize.vec().y, w.m_iWorkspaceID, (w.m_iWorkspaceID == -1 ? "" : g_pCompositor->getWorkspaceByID(w.m_iWorkspaceID) ? g_pCompositor->getWorkspaceByID(w.m_iWorkspaceID)->m_szName.c_str() : std::string("Invalid workspace " + std::to_string(w.m_iWorkspaceID)).c_str()), (int)w.m_bIsFloating, w.m_iMonitorID, g_pXWaylandManager->getAppIDClass(&w).c_str());
+std::string clientsRequest(bool json) {
+    if (json) {
+        Json::Value result = Json::Value(Json::arrayValue);
+        for (auto& w : g_pCompositor->m_lWindows) {
+            if (w.m_bIsMapped) {
+                Json::Value data = Json::Value(Json::objectValue);
+
+                char buf[8] = "";
+                snprintf(buf, sizeof buf, "%x", &w);
+                data["address"] = std::string(strdup(buf));
+
+                data["title"] = w.m_szTitle;
+                data["pos_x"] = (int)w.m_vRealPosition.vec().x;
+                data["pos_y"] = (int)w.m_vRealPosition.vec().y;
+                data["size_x"] = (int)w.m_vRealSize.vec().x;
+                data["size_y"] = (int)w.m_vRealSize.vec().y;
+                data["workspace_id"] = w.m_iWorkspaceID;
+                data["workspace_name"] = (w.m_iWorkspaceID == -1 ? "" : g_pCompositor->getWorkspaceByID(w.m_iWorkspaceID) ? g_pCompositor->getWorkspaceByID(w.m_iWorkspaceID)->m_szName.c_str() : std::string("Invalid workspace " + std::to_string(w.m_iWorkspaceID)).c_str());
+                data["floating"] = w.m_bIsFloating;
+                data["monitor"] = w.m_iMonitorID;
+                data["class"] = g_pXWaylandManager->getAppIDClass(&w).c_str();
+                
+                result.append(data);
+            }
+        }
+
+        Json::FastWriter writer;
+        return writer.write(result);
     }
-    return result;
+    else {
+        std::string result = "";
+        for (auto& w : g_pCompositor->m_lWindows) {
+            if (w.m_bIsMapped)
+                result += getFormat("Window %x -> %s:\n\tat: %i,%i\n\tsize: %i,%i\n\tworkspace: %i (%s)\n\tfloating: %i\n\tmonitor: %i\n\tclass: %s\n\n",
+                                &w, w.m_szTitle.c_str(), (int)w.m_vRealPosition.vec().x, (int)w.m_vRealPosition.vec().y, (int)w.m_vRealSize.vec().x, (int)w.m_vRealSize.vec().y, w.m_iWorkspaceID, (w.m_iWorkspaceID == -1 ? "" : g_pCompositor->getWorkspaceByID(w.m_iWorkspaceID) ? g_pCompositor->getWorkspaceByID(w.m_iWorkspaceID)->m_szName.c_str() : std::string("Invalid workspace " + std::to_string(w.m_iWorkspaceID)).c_str()), (int)w.m_bIsFloating, w.m_iMonitorID, g_pXWaylandManager->getAppIDClass(&w).c_str());
+        }
+        return result;
+    }
 }
 
-std::string workspacesRequest() {
-    std::string result = "";
-    for (auto& w : g_pCompositor->m_lWorkspaces) {
-        result += getFormat("workspace ID %i (%s) on monitor %s:\n\twindows: %i\n\thasfullscreen: %i\n\n",
-                            w.m_iID, w.m_szName.c_str(), g_pCompositor->getMonitorFromID(w.m_iMonitorID)->szName.c_str(), g_pCompositor->getWindowsOnWorkspace(w.m_iID), (int)w.m_bHasFullscreenWindow);
+std::string workspacesRequest(bool json) {
+    if (json) {
+        Json::Value result = Json::Value(Json::arrayValue);
+        for (auto& w : g_pCompositor->m_lWorkspaces) {
+            Json::Value data = Json::Value(Json::objectValue);
+
+            data["id"] = w.m_iID;
+            data["name"] = w.m_szName;
+            data["monitor_name"] = g_pCompositor->getMonitorFromID(w.m_iMonitorID)->szName;
+            data["window_count"] = g_pCompositor->getWindowsOnWorkspace(w.m_iID);
+            data["has_fullscreen"] = (int)w.m_bHasFullscreenWindow;
+            
+            result.append(data);
+        }
+
+        Json::FastWriter writer;
+        return writer.write(result);
     }
-    return result;
+    else {
+        std::string result = "";
+        for (auto& w : g_pCompositor->m_lWorkspaces) {
+            result += getFormat("workspace ID %i (%s) on monitor %s:\n\twindows: %i\n\thasfullscreen: %i\n\n",
+                                w.m_iID, w.m_szName.c_str(), g_pCompositor->getMonitorFromID(w.m_iMonitorID)->szName.c_str(), g_pCompositor->getWindowsOnWorkspace(w.m_iID), (int)w.m_bHasFullscreenWindow);
+        }
+        return result;
+    }
 }
 
-std::string activeWindowRequest() {
+std::string activeWindowRequest(bool json) {
     const auto PWINDOW = g_pCompositor->m_pLastWindow;
-
     if (!g_pCompositor->windowValidMapped(PWINDOW))
         return "Invalid";
 
-    return getFormat("Window %x -> %s:\n\tat: %i,%i\n\tsize: %i,%i\n\tworkspace: %i (%s)\n\tfloating: %i\n\tmonitor: %i\n\tclass: %s\n\n",
-                        PWINDOW, PWINDOW->m_szTitle.c_str(), (int)PWINDOW->m_vRealPosition.vec().x, (int)PWINDOW->m_vRealPosition.vec().y, (int)PWINDOW->m_vRealSize.vec().x, (int)PWINDOW->m_vRealSize.vec().y, PWINDOW->m_iWorkspaceID, (PWINDOW->m_iWorkspaceID == -1 ? "" : g_pCompositor->getWorkspaceByID(PWINDOW->m_iWorkspaceID)->m_szName.c_str()), (int)PWINDOW->m_bIsFloating, (int)PWINDOW->m_iMonitorID, g_pXWaylandManager->getAppIDClass(PWINDOW).c_str());
+    if (json) {
+        Json::Value result = Json::Value(Json::objectValue);
+
+        char buf[8] = "";
+        snprintf(buf, sizeof buf, "%x", PWINDOW);
+        result["address"] = std::string(strdup(buf));
+
+        result["title"] = PWINDOW->m_szTitle;
+        result["pos_x"] = (int)PWINDOW->m_vRealPosition.vec().x;
+        result["pos_y"] = (int)PWINDOW->m_vRealPosition.vec().y;
+        result["size_x"] = (int)PWINDOW->m_vRealSize.vec().x;
+        result["size_y"] = (int)PWINDOW->m_vRealSize.vec().y;
+        result["workspace_id"] = PWINDOW->m_iWorkspaceID;
+        result["workspace_name"] = (PWINDOW->m_iWorkspaceID == -1 ? "" : g_pCompositor->getWorkspaceByID(PWINDOW->m_iWorkspaceID)->m_szName.c_str());
+        result["floating"] = PWINDOW->m_bIsFloating;
+        result["monitor"] = PWINDOW->m_iMonitorID;
+        result["class"] = g_pXWaylandManager->getAppIDClass(PWINDOW).c_str();
+
+        Json::FastWriter writer;
+        return writer.write(result);
+    }
+    else {
+        return getFormat("Window %x -> %s:\n\tat: %i,%i\n\tsize: %i,%i\n\tworkspace: %i (%s)\n\tfloating: %i\n\tmonitor: %i\n\tclass: %s\n\n",
+                            PWINDOW, PWINDOW->m_szTitle.c_str(), (int)PWINDOW->m_vRealPosition.vec().x, (int)PWINDOW->m_vRealPosition.vec().y, (int)PWINDOW->m_vRealSize.vec().x, (int)PWINDOW->m_vRealSize.vec().y, PWINDOW->m_iWorkspaceID, (PWINDOW->m_iWorkspaceID == -1 ? "" : g_pCompositor->getWorkspaceByID(PWINDOW->m_iWorkspaceID)->m_szName.c_str()), (int)PWINDOW->m_bIsFloating, (int)PWINDOW->m_iMonitorID, g_pXWaylandManager->getAppIDClass(PWINDOW).c_str());
+    }
 }
 
 std::string layersRequest() {
@@ -73,36 +172,118 @@ std::string layersRequest() {
     return result;
 }
 
-std::string devicesRequest() {
-    std::string result = "";
+std::string devicesRequest(bool json) {
+    if (json) {
+        Json::Value result = Json::Value(Json::objectValue);
 
-    result += "mice:\n";
+        char buf[8] = "";
 
-    for (auto& m : g_pInputManager->m_lMice) {
-        result += getFormat("\tMouse at %x:\n\t\t%s\n", &m, m.mouse->name);
+        Json::Value mice = Json::Value(Json::arrayValue);
+
+        for (auto& m : g_pInputManager->m_lMice) {
+            Json::Value device = Json::Value(Json::objectValue);
+
+            snprintf(buf, sizeof buf, "%x", &m);
+            device["address"] = std::string(strdup(buf));
+            device["name"] = m.mouse->name;
+            
+            mice.append(device);
+        }
+
+        Json::Value keyboards = Json::Value(Json::arrayValue);
+
+        for (auto& k : g_pInputManager->m_lKeyboards) {
+            Json::Value device = Json::Value(Json::objectValue);
+
+            snprintf(buf, sizeof buf, "%x", &k);
+            device["address"] = std::string(strdup(buf));
+            device["name"] = k.keyboard->name;
+            
+            keyboards.append(device);
+        }
+
+        Json::Value tablets = Json::Value(Json::arrayValue);
+
+        for (auto& d : g_pInputManager->m_lTabletPads) {
+            Json::Value device = Json::Value(Json::objectValue);
+
+            device["type"] = "pad";
+            
+            snprintf(buf, sizeof buf, "%x", &d);
+            device["address"] = std::string(strdup(buf));
+            
+            snprintf(buf, sizeof buf, "%x", d.pTabletParent);
+            device["parent_address"] = std::string(strdup(buf));
+
+            device["parent_name"] = d.pTabletParent ? d.pTabletParent->wlrDevice ? d.pTabletParent->wlrDevice->name : "" : "";
+            
+            tablets.append(device);
+        }
+
+        for (auto& d : g_pInputManager->m_lTablets) {
+            Json::Value device = Json::Value(Json::objectValue);
+
+            device["type"] = "tablet";
+            
+            snprintf(buf, sizeof buf, "%x", &d);
+            device["address"] = std::string(strdup(buf));
+            device["name"] = d.wlrDevice ? d.wlrDevice->name : "";
+
+            tablets.append(device);
+        }
+
+        for (auto& d : g_pInputManager->m_lTabletTools) {
+            Json::Value device = Json::Value(Json::objectValue);
+
+            device["type"] = "tool";
+            
+            snprintf(buf, sizeof buf, "%x", &d);
+            device["address"] = std::string(strdup(buf));
+            
+            snprintf(buf, sizeof buf, "%x", d.wlrTabletTool);
+            device["tool_data"] = d.wlrTabletTool ? d.wlrTabletTool->data : 0;
+
+            tablets.append(device);
+        }
+
+        result["mice"] = mice;
+        result["keyboards"] = keyboards;
+        result["tablets"] = tablets;
+
+        Json::FastWriter writer;
+        return writer.write(result);
     }
+    else {
+        std::string result = "";
 
-    result += "\n\nKeyboards:\n";
+        result += "mice:\n";
 
-    for (auto& k : g_pInputManager->m_lKeyboards) {
-        result += getFormat("\tKeyboard at %x:\n\t\t%s\n", &k, k.keyboard->name);
+        for (auto& m : g_pInputManager->m_lMice) {
+            result += getFormat("\tMouse at %x:\n\t\t%s\n", &m, m.mouse->name);
+        }
+
+        result += "\n\nKeyboards:\n";
+
+        for (auto& k : g_pInputManager->m_lKeyboards) {
+            result += getFormat("\tKeyboard at %x:\n\t\t%s\n", &k, k.keyboard->name);
+        }
+
+        result += "\n\nTablets:\n";
+
+        for (auto& d : g_pInputManager->m_lTabletPads) {
+            result += getFormat("\tTablet Pad at %x (belongs to %x -> %s)\n", &d, d.pTabletParent, d.pTabletParent ? d.pTabletParent->wlrDevice ? d.pTabletParent->wlrDevice->name : "" : "");
+        }
+
+        for (auto& d : g_pInputManager->m_lTablets) {
+            result += getFormat("\tTablet at %x:\n\t\t%s\n", &d, d.wlrDevice ? d.wlrDevice->name : "");
+        }
+
+        for (auto& d : g_pInputManager->m_lTabletTools) {
+            result += getFormat("\tTablet Tool at %x (belongs to %x)\n", &d, d.wlrTabletTool ? d.wlrTabletTool->data : 0);
+        }
+
+        return result;
     }
-
-    result += "\n\nTablets:\n";
-
-    for (auto& d : g_pInputManager->m_lTabletPads) {
-        result += getFormat("\tTablet Pad at %x (belongs to %x -> %s)\n", &d, d.pTabletParent, d.pTabletParent ? d.pTabletParent->wlrDevice ? d.pTabletParent->wlrDevice->name : "" : "");
-    }
-
-    for (auto& d : g_pInputManager->m_lTablets) {
-        result += getFormat("\tTablet at %x:\n\t\t%s\n", &d, d.wlrDevice ? d.wlrDevice->name : "");
-    }
-
-    for (auto& d : g_pInputManager->m_lTabletTools) {
-        result += getFormat("\tTablet Tool at %x (belongs to %x)\n", &d, d.wlrTabletTool ? d.wlrTabletTool->data : 0);
-    }
-
-    return result;
 }
 
 std::string versionRequest() {
@@ -206,13 +387,21 @@ std::string dispatchBatch(std::string request) {
 
 std::string getReply(std::string request) {
     if (request == "monitors")
-        return monitorsRequest();
+        return monitorsRequest(false);
+    else if (request == "monitorsjson")
+        return monitorsRequest(true);
     else if (request == "workspaces")
-        return workspacesRequest();
+        return workspacesRequest(false);
+    else if (request == "workspacesjson")
+        return workspacesRequest(true);
     else if (request == "clients")
-        return clientsRequest();
+        return clientsRequest(false);
+    else if (request == "clientsjson")
+        return clientsRequest(true);
     else if (request == "activewindow")
-        return activeWindowRequest();
+        return activeWindowRequest(false);
+    else if (request == "activewindowjson")
+        return activeWindowRequest(true);
     else if (request == "layers")
         return layersRequest();
     else if (request == "version")
@@ -220,7 +409,9 @@ std::string getReply(std::string request) {
     else if (request == "reload")
         return reloadRequest();
     else if (request == "devices")
-        return devicesRequest();
+        return devicesRequest(false);
+    else if (request == "devicesjson")
+        return devicesRequest(true);
     else if (request.find("dispatch") == 0)
         return dispatchRequest(request);
     else if (request.find("keyword") == 0)
