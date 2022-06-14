@@ -32,6 +32,7 @@ CKeybindManager::CKeybindManager() {
     m_mDispatchers["cyclenext"]                 = circleNext;
     m_mDispatchers["focuswindowbyclass"]        = focusWindowByClass;
     m_mDispatchers["setcursorposition"]         = setCursorPosition;
+    m_mDispatchers["disablecursorinteraction"]  = setDisableCursorInteraction;
 }
 
 void CKeybindManager::addKeybind(SKeybind kb) {
@@ -884,4 +885,20 @@ void CKeybindManager::setCursorPosition(std::string args) {
     }
 
     wlr_cursor_warp(g_pCompositor->m_sWLRCursor, g_pCompositor->m_sSeat.mouse->mouse, stoi(args.substr(0, split_pos)), stoi(args.substr(split_pos + 1, args.length())));
+}
+
+void CKeybindManager::setDisableCursorInteraction(std::string args) {
+    if (args == "i") {
+        g_pInputManager->m_disableInteraction = !g_pInputManager->m_disableInteraction;
+    }
+    else if (args == "y") {
+        g_pInputManager->m_disableInteraction = true;
+    }
+    else if (args == "n") {
+        g_pInputManager->m_disableInteraction = false;
+    }
+    else {
+        Debug::log(ERR, "Error in setDisableCursorInteraction: invalid args");
+        return;
+    }
 }

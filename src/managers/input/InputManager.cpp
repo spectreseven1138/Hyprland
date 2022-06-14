@@ -24,6 +24,9 @@ void CInputManager::onMouseWarp(wlr_pointer_motion_absolute_event* e) {
 
 void CInputManager::mouseMoveUnified(uint32_t time, bool refocus) {
 
+    if (m_disableInteraction)
+        return;
+
     if (!g_pCompositor->m_bReadyToProcess)
         return;
 

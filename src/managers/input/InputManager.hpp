@@ -52,6 +52,8 @@ public:
 
     SKeyboard*      m_pActiveKeyboard = nullptr;
 
+    bool            m_disableInteraction = false;
+
    private:
 
     uint32_t        m_uiCapabilities = 0;
